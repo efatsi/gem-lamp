@@ -8,10 +8,11 @@ FASTLED_USING_NAMESPACE
 
 #define NUM_LEDS 10
 #define MIN_BRIGHTNESS 0
-#define MAX_BRIGHTNESS 100
+#define MAX_BRIGHTNESS 50
+#define ADJUSTMENT 5
 
 int brightness = 0;
-int targetBrightness = 50;
+int targetBrightness = 15;
 
 double voltage = 0;
 double soc = 0;
@@ -42,14 +43,14 @@ void manageState() {
 
     if (accel.cz < 0) {
       // Serial.println("dim");
-      targetBrightness -= 10;
+      targetBrightness -= ADJUSTMENT;
 
       if (targetBrightness < MIN_BRIGHTNESS) {
         targetBrightness = MIN_BRIGHTNESS;
       }
     } else if (accel.cz > 0.8) {
       // Serial.println("bright");
-      targetBrightness += 10;
+      targetBrightness += ADJUSTMENT;
 
       if (targetBrightness > MAX_BRIGHTNESS) {
         targetBrightness = MAX_BRIGHTNESS;
@@ -62,13 +63,29 @@ void manageState() {
 }
 
 void display() {
-  if (targetBrightness != brightness) {
-    FastLED.setBrightness(targetBrightness);
-    for (size_t i = 0; i < NUM_LEDS; i++) {
-      leds[i] = CRGB::White;
+  if (brightness < targetBrightness) {
+    for (int i = brightness; i <= targetBrightness; i++) {
+      writeToLights(CRGB::White, i);
+      delay(100);
     }
-    FastLED.show();
-
-    brightness = targetBrightness;
+  } else if (brightness > targetBrightness) {
+    for (int i = brightness; i >= targetBrightness; i--) {
+      writeToLights(CRGB::White, i);
+      delay(100);
+    }
   }
+
+  brightness = targetBrightness;
+}
+
+void writeToLights(int color, int brightness) {
+  Serial.print("writing ");
+  Serial.println(brightness);
+
+  FastLED.setBrightness(brightness);
+
+  for (size_t i = 0; i < NUM_LEDS; i++) {
+    leds[i] = color;
+  }
+  FastLED.show();
 }
