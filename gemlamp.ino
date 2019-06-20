@@ -10,7 +10,8 @@ FASTLED_USING_NAMESPACE
 #define MIN_BRIGHTNESS 0
 #define MAX_BRIGHTNESS 100
 
-int brightness = 50;
+int brightness = 0;
+int targetBrightness = 50;
 
 double voltage = 0;
 double soc = 0;
@@ -21,8 +22,8 @@ CRGB leds[NUM_LEDS];
 void setup()  {
   Serial.begin(9600);
   lipo.begin();
-  FastLED.addLeds<APA102, A4, A5>(leds, NUM_LEDS);
   accel.begin(SCALE_2G, ODR_1);
+  FastLED.addLeds<APA102, A4, A5>(leds, NUM_LEDS);
 
   lipo.quickStart();
 
@@ -31,30 +32,43 @@ void setup()  {
 }
 
 void loop()  {
-  FastLED.setBrightness(brightness);
-  for (size_t i = 0; i < NUM_LEDS; i++) {
-    leds[i] = CRGB::White;
-  }
-  FastLED.show();
+  manageState();
+  display();
+}
 
+void manageState() {
   if (accel.available()) {
     accel.read();
 
-    if (accel.cx > 0.4) {
+    if (accel.cz < 0) {
       // Serial.println("dim");
-      brightness -= 10;
-    } else if (accel.cx < -0.6) {
-      // Serial.println("bright");
-      brightness += 10;
-    }
+      targetBrightness -= 10;
 
-    if (brightness < MIN_BRIGHTNESS) {
-      brightness = MIN_BRIGHTNESS;
-    } else if (brightness > MAX_BRIGHTNESS) {
-      brightness = MAX_BRIGHTNESS;
+      if (targetBrightness < MIN_BRIGHTNESS) {
+        targetBrightness = MIN_BRIGHTNESS;
+      }
+    } else if (accel.cz > 0.8) {
+      // Serial.println("bright");
+      targetBrightness += 10;
+
+      if (targetBrightness > MAX_BRIGHTNESS) {
+        targetBrightness = MAX_BRIGHTNESS;
+      }
     }
 
     voltage = lipo.getVoltage();
     soc = lipo.getSOC();
+  }
+}
+
+void display() {
+  if (targetBrightness != brightness) {
+    FastLED.setBrightness(targetBrightness);
+    for (size_t i = 0; i < NUM_LEDS; i++) {
+      leds[i] = CRGB::White;
+    }
+    FastLED.show();
+
+    brightness = targetBrightness;
   }
 }
