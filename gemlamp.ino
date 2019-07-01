@@ -86,8 +86,7 @@ void manageState() {
       brightness = max(MIN_BRIGHTNESS - 1, brightness - 5);
     }
 
-    voltage = lipo.getVoltage();
-    soc = lipo.getSOC();
+    debug();
   }
 }
 
@@ -127,4 +126,25 @@ void writeToLights(int color, int brightness) {
     leds[i] = color;
   }
   FastLED.show();
+}
+
+void debug() {
+  voltage = lipo.getVoltage();
+  soc = lipo.getSOC();
+
+  Serial.println();
+  Serial.println("- - - - - - - -");
+  Serial.println();
+
+  Serial.print("cx: ");
+  Serial.println(accel.cx);
+  Serial.print("cy: ");
+  Serial.println(accel.cy);
+  Serial.print("cz: ");
+  Serial.println(accel.cz);
+
+  Serial.print("voltage: ");
+  Serial.println(voltage);
+  Serial.print("soc:     ");
+  Serial.println(soc);
 }
